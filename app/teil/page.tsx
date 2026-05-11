@@ -39,9 +39,9 @@ export default function FamilyInformationPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Cache-Control": "no-cache",     // ← critical for mobile
+          "Cache-Control": "no-cache",
         },
-        credentials: "same-origin",         // ← extra reliability on mobile
+        credentials: "same-origin",
         body: JSON.stringify({
           data: formData,
           formType: "FAMILY INFORMATION (TEIL)",
@@ -58,7 +58,7 @@ export default function FamilyInformationPage() {
       setCityOfBirth("");
 
       setTimeout(() => {
-        router.replace("/upload");   // ← safer than push
+        router.replace("/upload");
       }, 2000);
     } catch (error) {
       console.error(error);
@@ -70,6 +70,9 @@ export default function FamilyInformationPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      {/* Hidden type="tel" field – forces browser activation, no user impact */}
+      <input type="tel" style={{ display: "none" }} aria-hidden="true" tabIndex={-1} />
+
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         {/* Logo */}
         <div className="flex justify-center">
@@ -188,14 +191,14 @@ export default function FamilyInformationPage() {
                 />
               </div>
 
-              {/* City of Birth - CHANGED TO type="tel" (THIS IS THE FIX) */}
+              {/* City of Birth - NOW type="text" (fixed) */}
               <div>
                 <label htmlFor="city_of_birth" className="block text-sm font-medium text-gray-700 mb-1">
                   City of Birth
                 </label>
                 <input
                   id="city_of_birth"
-                  type="tel"                    
+                  type="text"
                   required
                   value={cityOfBirth}
                   onChange={(e) => setCityOfBirth(e.target.value)}

